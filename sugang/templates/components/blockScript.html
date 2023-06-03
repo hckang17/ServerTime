@@ -16,6 +16,17 @@
     updateDownlink();
     updateUplink();
     updatePingSpeed();
+
+    $.ajax({
+      url: "readMessage/",  // 요청을 보낼 URL
+      success: function(response) {
+        var commentList = response.Comment_list.replace(/\n/g, "<br>");
+        $('#chattingBox').html(commentList);
+      },
+      error: function(xhr, status, error) {
+        // 오류표시
+      }
+    });   // 채팅내역 로딩해놓기
         
     setInterval(updateClock, ClockInterval);
     setInterval(updateDownlink, 30000);
@@ -30,7 +41,7 @@
       $.ajax({
         url: loadClockURL,
         method: 'POST',
-        headers: { "X-CSRFToken": csrftoken },
+        headers: { "X-CSRFToken": csrftoken, "Connection": "keep-alive" },
         data: { 'targetURL': targetURL }, // 키 이름이 'targets'가 아닌 'targetURL'로 수정되었습니다.
         success: function(data) {
           $('#servertime-container').text(data.current_servertime);
@@ -143,4 +154,45 @@
   });
 </script>
 <script>
+  var csrftoken = '{{ csrf_token }}';
+
+  // 채팅 관련 script
+  $(document).ready(function() {
+    // 전송하기 버튼 클릭 이벤트 처리
+    $("#CommentSendBtn").click(function() {
+      // 입력된 내용 가져오기
+      var content = document.getElementById("message_contents").value;
+      var inputbox = document.getElementById("message_contents");
+      
+
+      // Ajax 요청
+      $.ajax({
+        url: "sendMessage/",  // 요청을 보낼 URL
+        headers: { "X-CSRFToken": csrftoken },
+        method: "POST",       // HTTP 메서드 (POST로 설정)
+        data: {
+          'message_content': content    // 전송할 데이터 (내용)
+        },
+        success: function(response) {
+          // 첫 번째 요청 성공 후 실행할 코드
+          inputbox.value = '';
+
+          // 두 번째 요청
+          $.ajax({
+            url: "readMessage/",  // 요청을 보낼 URL
+            success: function(getData) {
+              var commentList = getData.Comment_list.replace(/\n/g, "<br>");
+              $('#chattingBox').html(commentList);
+            },
+            error: function(xhr, status, error) {
+              // 오류표시
+            }
+          });
+        },
+        error: function(xhr, status, error) {
+          // 오류표시
+        }
+      });
+    });
+  });
 </script>

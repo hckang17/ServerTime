@@ -48,7 +48,7 @@ def reload_serverclock(request):
     server_time = method.calculate_time(target_url)
     end_time = time.time()
     run_time = end_time - start_time
-    run_time = run_time / 2   # 2RTT가 결국 InternetDelay이기 때문에 실제 서버시간 오차는 1RTT임.
+    run_time = run_time / 4   # 2RTT가 결국 InternetDelay이기 때문에 실제 서버시간 오차는 1RTT임.
     run_time = round(run_time * 1000, 2)
     print("Load Clock time : ", str(run_time))
     return JsonResponse({'current_servertime':server_time, 'InternetDelay':run_time})
@@ -62,7 +62,7 @@ def reload_defaultclock(request):
     formatted_time = ntp_time.strftime("%Y년 %m월 %d일 %H시 %M분 %S초")
     end_time = time.time()
     run_time = end_time - start_time
-    run_time = run_time / 2   # 2RTT가 결국 InternetDelay이기 때문에 실제 서버시간 오차는 1RTT임.
+    run_time = run_time / 4   # 2RTT가 결국 InternetDelay이기 때문에 실제 서버시간 오차는 1RTT임.
     run_time = round(run_time * 1000, 2)
     print("Load DefaultClock time : ", str(run_time))
     return JsonResponse({'current_servertime':formatted_time,'InternetDelay':run_time})
@@ -100,4 +100,21 @@ def TestPing(request):
     response = {'pingSpeed':response_time}
     return JsonResponse(response)
 
-
+def send_message(request):
+    if request.method == 'POST':
+        message = request.POST.get('message_content')
+        # Comment 모델을 사용하여 댓글 저장
+        print("입력" + message)
+        comment = Comment(content=message)
+        comment.save()
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'error'})
+    
+def read_message(request):
+    Comment_lists = Comment.objects.order_by('-created_at')[:30]
+    Comment_lists_str = ''
+    for data in Comment_lists:
+        Comment_lists_str += ">>{}<br>".format(data.content)
+    response = {'Comment_list':Comment_lists_str}
+    return JsonResponse(response)
